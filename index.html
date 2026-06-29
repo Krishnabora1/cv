@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive CV - Krishna Bora</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            color: #1F2937;
+        }
+        .nav-link {
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3B82F6;
+            transform: translateY(-2px);
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+        .chat-bubble {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 4rem;
+            height: 4rem;
+            background-color: #3B82F6;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease-in-out;
+            z-index: 100;
+        }
+        .chat-bubble:hover {
+            transform: scale(1.1);
+        }
+        .chat-window {
+            position: fixed;
+            bottom: 6rem;
+            right: 1.5rem;
+            width: 100%;
+            max-width: 24rem;
+            height: 30rem;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 99;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-header {
+            background-color: #3B82F6;
+            color: white;
+            padding: 1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-body {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background-color: #F3F4F6;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .message {
+            max-width: 80%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.75rem;
+        }
+        .message-user {
+            background-color: #E5E7EB;
+            align-self: flex-end;
+            text-align: right;
+        }
+        .message-assistant {
+            background-color: #DBEAFE;
+            align-self: flex-start;
+        }
+        .chat-input {
+            padding: 1rem;
+            border-top: 1px solid #E5E7EB;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 0.5rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+        }
+        .chat-input button {
+            background-color: #3B82F6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+        }
+        .suggestion-buttons {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .suggestion-btn {
+            background-color: white;
+            color: #3B82F6;
+            border: 1px solid #BFDBFE;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .suggestion-btn:hover {
+            background-color: #3B82F6;
+            color: white;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-lg">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-800">KRISHNA BORA</div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#summary" class="nav-link font-medium">Summary</a>
+                <a href="#skills" class="nav-link font-medium">Skills</a>
+                <a href="#experience" class="nav-link font-medium">Experience</a>
+                <a href="#education" class="nav-link font-medium">Education</a>
+            </div>
+            <div class="md:hidden">
+                <button id="menu-btn" class="text-gray-800 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 bg-white shadow-inner">
+            <a href="#summary" class="block py-2 nav-link font-medium">Summary</a>
+            <a href="#skills" class="block py-2 nav-link font-medium">Skills</a>
+            <a href="#experience" class="block py-2 nav-link font-medium">Experience</a>
+            <a href="#education" class="block py-2 nav-link font-medium">Education</a>
+        </div>
+    </header>
+
+    <main class="w-full">
+
+        <section id="summary" class="bg-gray-100 min-h-screen flex flex-col justify-center items-center px-4 md:px-0 text-center">
+            <div class="max-w-4xl mx-auto py-16">
+                <h1 class="text-6xl md:text-8xl font-extrabold text-gray-900 mb-4 tracking-tight">KRISHNA BORA</h1>
+                <p class="text-2xl md:text-3xl text-gray-600 mb-6 font-light">Computer Science Undergraduate</p>
+                <p class="text-lg md:text-xl text-gray-700 leading-relaxed max-w-2xl mx-auto mb-10">
+                    Computer Science undergraduate with hands-on experience in Full Stack Web Development, Machine Learning, and Cyber Security. Skilled in React, Node.js, MongoDB, JavaScript, and C++. Passionate about building scalable software solutions and continuously learning modern technologies.
+                </p>
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
+                    <a href="mailto:krishnabora7640@gmail.com" class="w-full md:w-auto bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-700 transition-colors transform hover:scale-105">Email Me</a>
+                    <a href="#" target="_blank" class="w-full md:w-auto bg-gray-300 text-gray-800 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-400 transition-colors transform hover:scale-105">LinkedIn</a>
+                    <a href="#" target="_blank" class="w-full md:w-auto bg-gray-800 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-900 transition-colors transform hover:scale-105">GitHub</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="py-20 px-4 md:px-12 bg-white">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold text-gray-800">Skills Dashboard</h2>
+                <p class="text-xl text-gray-600 mt-4">An interactive overview of my technical and professional abilities.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                <div class="card p-8 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-3xl font-semibold mb-4 text-center text-blue-600">Technical Proficiency</h3>
+                        <p class="text-gray-600 mb-6 text-center">A comprehensive look at my technical skills across languages and frameworks.</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="technicalSkillsChart"></canvas>
+                    </div>
+                </div>
+                <div class="card p-8 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-3xl font-semibold mb-4 text-center text-blue-600">Professional Strengths</h3>
+                        <p class="text-gray-600 mb-6 text-center">My soft skills, visualized to show a well-rounded and adaptable profile.</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="professionalSkillsChart"></canvas>
+                    </div>
+                </div>
+                <div class="card p-8 rounded-2xl flex flex-col justify-between md:col-span-2 lg:col-span-1">
+                    <div>
+                        <h3 class="text-3xl font-semibold mb-4 text-center text-blue-600">Skill Details</h3>
+                        <p class="text-gray-600 mb-6 text-center">Explore specific domains and technical expertise.</p>
+                    </div>
+                    <div class="flex-grow flex items-center">
+                        <ul id="skill-details-list" class="space-y-4 text-gray-700 text-lg">
+                            <li class="font-medium">▶ Frontend: HTML, CSS, React.js, Electron.js.</li>
+                            <li class="font-medium">▶ Backend & Databases: Node.js, MongoDB.</li>
+                            <li class="font-medium">▶ Core Concepts: Data Structures & Algorithms, Full Stack Development.</li>
+                            <li class="font-medium">▶ Machine Learning: OpenCV-based image processing pipelines.</li>
+                            <li class="font-medium">▶ Security: Vulnerability assessment and network monitoring.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="experience" class="py-20 px-4 md:px-12 bg-gray-100">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold text-gray-800">Experience & Projects</h2>
+                <p class="text-xl text-gray-600 mt-4">A chronological timeline of my key projects, internships, and professional experiences.</p>
+            </div>
+            <div class="relative max-w-4xl mx-auto">
+                <div class="absolute left-1/2 w-1 h-full bg-blue-300 transform -translate-x-1/2 rounded-full"></div>
+                <div id="timeline-container" class="space-y-20">
+                    </div>
+            </div>
+        </section>
+
+        <section id="education" class="py-20 px-4 md:px-12 bg-white">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold text-gray-800">Education & Achievements</h2>
+                <p class="text-xl text-gray-600 mt-4">My academic background and key accomplishments.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="card p-8 rounded-2xl">
+                    <h3 class="text-3xl font-semibold mb-6 text-blue-600">Academic Journey</h3>
+                    <div id="education-container" class="space-y-6 text-gray-700">
+                        </div>
+                </div>
+                <div class="card p-8 rounded-2xl flex flex-col">
+                    <h3 class="text-3xl font-semibold mb-6 text-blue-600">Certifications</h3>
+                    <div class="bg-gray-100 p-6 rounded-xl mt-4 transform transition-transform hover:scale-105">
+                        <h4 class="font-bold text-xl text-blue-600 mb-2">Cyber Security Certification</h4>
+                        <p class="text-gray-700">Acmegrade Certification</p>
+                    </div>
+                    <div class="bg-gray-100 p-6 rounded-xl mt-6 transform transition-transform hover:scale-105">
+                        <h4 class="font-bold text-xl text-blue-600 mb-2">Relevant Coursework</h4>
+                        <p class="text-gray-700">Project Management</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-10 bg-gray-900 text-gray-400">
+        <p>&copy; 2026 Krishna Bora. All Rights Reserved.</p>
+    </footer>
+
+    <div id="chat-bubble" class="chat-bubble">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+    <div id="chat-window" class="chat-window hidden">
+        <div class="chat-header">
+            AI Assistant
+            <button id="close-chat" class="text-white focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div id="chat-body" class="chat-body">
+            <div class="message message-assistant">
+                Hello! I'm Krishna's AI Assistant. How can I help you?
+                <div class="suggestion-buttons">
+                    <button class="suggestion-btn" data-query="Summary">Summary</button>
+                    <button class="suggestion-btn" data-query="Skills">Skills</button>
+                    <button class="suggestion-btn" data-query="Experience & Projects">Experience</button>
+                    <button class="suggestion-btn" data-query="Education">Education</button>
+                    <button class="suggestion-btn" data-query="Contact Info">Contact</button>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chat-input-text" placeholder="Ask a question..." class="flex-grow">
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Data updated for Krishna Bora
+            const technicalSkills = {
+                labels: ['C/C++', 'JavaScript', 'React.js', 'Node.js', 'MongoDB', 'Machine Learning', 'Cyber Security', 'DSA'],
+                data: [90, 85, 80, 80, 75, 70, 75, 85]
+            };
+            const professionalSkills = {
+                labels: ['Problem Solving', 'Teamwork', 'Communication', 'Adaptability', 'Quick Learner'],
+                data: [95, 90, 85, 90, 95]
+            };
+            const timelineData = [
+                {
+                    date: 'Sep 2023 - Oct 2027',
+                    title: 'Hotel Management System',
+                    type: 'Project',
+                    description: 'Developed a desktop application for hotel booking, room allocation, food ordering and billing. Built using React, Electron.js, Node.js, MongoDB, HTML, CSS and JavaScript.'
+                },
+                {
+                    date: 'Project',
+                    title: 'Portfolio Website',
+                    type: 'Project',
+                    description: 'Developed a responsive portfolio website to showcase projects and technical skills. Built using React, HTML, CSS and JavaScript.'
+                },
+                {
+                    date: 'Internship',
+                    title: 'Solar Panel Classification & Dust Accumulation Estimation',
+                    type: 'Internship',
+                    description: 'Developed an OpenCV-based image processing pipeline using Python and applied Machine Learning techniques for dust-level classification of solar panels at IIT Guwahati.'
+                },
+                {
+                    date: 'Internship',
+                    title: 'Cyber Security Intern',
+                    type: 'Internship',
+                    description: 'Performed vulnerability assessment, log analysis and network monitoring. Assisted in implementing security best practices and incident reporting.'
+                }
+            ];
+            const educationData = [
+                {
+                    degree: 'B.Tech in Computer Science and Engineering',
+                    institution: 'Jorhat Engineering College',
+                    period: 'Undergraduate',
+                    grade: 'Current'
+                },
+                {
+                    degree: 'Higher Secondary',
+                    institution: 'Pragya Academy, Jorhat',
+                    period: 'Completed',
+                    grade: 'Completed'
+                }
+            ];
+
+            // Mobile Menu Toggle
+            const menuBtn = document.getElementById('menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            mobileMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+
+            // Active Nav Link on Scroll
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Chart.js Initializations
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                        titleColor: '#F9FAFB',
+                        bodyColor: '#D1D5DB',
+                        borderColor: '#4B5563',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    r: {
+                        angleLines: { color: '#E5E7EB' },
+                        grid: { color: '#E5E7EB' },
+                        pointLabels: { font: { size: 14, weight: 'bold' }, color: '#3B82F6' },
+                        ticks: { backdropColor: '#F8FAFC', color: '#3B82F6' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#E5E7EB' },
+                        ticks: { color: '#4B5563', font: { size: 12 } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#4B5563', font: { size: 12 } }
+                    }
+                }
+            };
+            
+            new Chart(document.getElementById('technicalSkillsChart'), {
+                type: 'bar',
+                data: {
+                    labels: technicalSkills.labels,
+                    datasets: [{
+                        label: 'Proficiency',
+                        data: technicalSkills.data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: { ...chartOptions, indexAxis: 'y' }
+            });
+
+            new Chart(document.getElementById('professionalSkillsChart'), {
+                type: 'radar',
+                data: {
+                    labels: professionalSkills.labels,
+                    datasets: [{
+                        label: 'Strength',
+                        data: professionalSkills.data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(59, 130, 246, 1)'
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // Dynamic Content Injection
+            const timelineContainer = document.getElementById('timeline-container');
+            timelineData.forEach((item, index) => {
+                const sideClass = index % 2 === 0 ? 'md:ml-auto md:pr-12' : 'md:mr-auto md:pl-12';
+                const timelineItem = `
+                    <div class="relative">
+                        <div class="absolute top-1 left-0 w-4 h-4 bg-blue-600 rounded-full z-10 transform -translate-x-1/2 md:left-1/2 md:-translate-x-1/2"></div>
+                        <div class="card p-8 rounded-2xl w-full md:w-[calc(50%-3rem)] ${sideClass}">
+                            <p class="text-sm text-gray-500 mb-2 font-medium">${item.date} - <span class="uppercase font-bold text-blue-600">${item.type}</span></p>
+                            <h4 class="text-2xl font-bold mb-3">${item.title}</h4>
+                            <p class="text-gray-700">${item.description}</p>
+                        </div>
+                    </div>
+                `;
+                timelineContainer.innerHTML += timelineItem;
+            });
+
+            const educationContainer = document.getElementById('education-container');
+            educationData.forEach(item => {
+                const eduItem = `
+                    <div class="border-l-4 border-blue-400 pl-4">
+                        <h4 class="font-bold text-xl">${item.degree}</h4>
+                        <p class="text-gray-600">${item.institution}</p>
+                        <p class="text-sm text-gray-500 mt-1">${item.period}</p>
+                    </div>
+                `;
+                educationContainer.innerHTML += eduItem;
+            });
+            
+            // AI Assistant Logic
+            const chatBubble = document.getElementById('chat-bubble');
+            const chatWindow = document.getElementById('chat-window');
+            const closeChatBtn = document.getElementById('close-chat');
+            const chatBody = document.getElementById('chat-body');
+            const chatInput = document.getElementById('chat-input-text');
+            const sendBtn = document.getElementById('send-btn');
+            
+            const cvData = {
+                summary: `Krishna Bora is a Computer Science undergraduate with hands-on experience in Full Stack Web Development, Machine Learning, and Cyber Security. He is passionate about building scalable software solutions.`,
+                contact: `You can reach Krishna via:<br>
+                          - Email: <a href="mailto:krishnabora7640@gmail.com" class="text-blue-600 hover:underline">krishnabora7640@gmail.com</a><br>
+                          - Phone: +91 9394694468`,
+                projects: timelineData,
+                skills: `Krishna's technical skills include C, C++, JavaScript, HTML, CSS, React.js, Electron.js, Node.js, and MongoDB. He also specializes in Data Structures & Algorithms. Soft skills include Problem Solving, Teamwork, and Adaptability.`,
+                education: `Krishna is pursuing a B.Tech in Computer Science and Engineering from Jorhat Engineering College. He completed his Higher Secondary education at Pragya Academy, Jorhat.`
+            };
+
+            chatBubble.addEventListener('click', () => {
+                chatWindow.classList.toggle('hidden');
+            });
+            closeChatBtn.addEventListener('click', () => {
+                chatWindow.classList.add('hidden');
+            });
+            
+            function addMessage(text, className) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', className);
+                messageDiv.innerHTML = text;
+                chatBody.appendChild(messageDiv);
+                chatBody.scrollTop = chatBody.scrollHeight;
+                return messageDiv;
+            }
+
+            async function sendMessage(prefilledMessage = null) {
+                const userMessage = prefilledMessage || chatInput.value.trim();
+                if (userMessage === '') return;
+
+                addMessage(userMessage, 'message-user');
+                chatInput.value = '';
+
+                const loadingMessage = addMessage('...', 'message-assistant');
+
+                try {
+                    const response = await getAssistantResponse(userMessage);
+                    loadingMessage.innerHTML = response;
+                } catch (error) {
+                    loadingMessage.innerHTML = 'Sorry, I am having trouble processing that request right now. Please try again later.';
+                    console.error("API error:", error);
+                }
+            }
+
+            chatBody.addEventListener('click', function(e) {
+                if (e.target && e.target.classList.contains('suggestion-btn')) {
+                    const query = e.target.dataset.query;
+                    sendMessage(query);
+                }
+            });
+
+            async function getAssistantResponse(message) {
+                const lowerCaseMessage = message.toLowerCase();
+
+                if (lowerCaseMessage.includes('summary')) {
+                    return cvData.summary;
+                }
+                if (lowerCaseMessage.includes('skill')) {
+                    return cvData.skills;
+                }
+                if (lowerCaseMessage.includes('experience') || lowerCaseMessage.includes('project')) {
+                    let response = "Here are Krishna's key projects & internships:<br><br>";
+                    cvData.projects.forEach(p => {
+                        response += `<b>${p.title}:</b> ${p.description}<br><br>`;
+                    });
+                    return response;
+                }
+                if (lowerCaseMessage.includes('education') || lowerCaseMessage.includes('college')) {
+                    return cvData.education;
+                }
+                if (lowerCaseMessage.includes('contact')) {
+                    return cvData.contact;
+                }
+
+                // Fallback to Gemini API for other questions
+                const prompt = `You are a professional and friendly AI assistant for Krishna Bora's interactive CV. Answer questions concisely using only the information provided below.
+                
+                CV Data:
+                - Summary: ${cvData.summary}
+                - Contact: Email: krishnabora7640@gmail.com, Phone: +91 9394694468
+                - Experience: ${JSON.stringify(cvData.projects)}
+                - Skills: ${cvData.skills}
+                - Education: ${cvData.education}
+
+                User's question: "${message}"
+                `;
+
+                const chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>');
+                } else {
+                    return 'Sorry, I could not generate a response.';
+                }
+            }
+
+            sendBtn.addEventListener('click', () => sendMessage());
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
